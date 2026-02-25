@@ -9,6 +9,7 @@ import {
   fetchVoiceAgents, fetchVoiceAgent, updateVoiceAgent,
   voiceAgentChat, syncVoiceAgent, unlinkVoiceAgent,
   getVoiceAgentSignedUrl, startVoiceAgentPhoneCall,
+  setDefaultVoiceAgent, getDefaultVoiceAgent,
 } from "../lib/api";
 import clsx from "clsx";
 
@@ -43,12 +44,28 @@ function AgentList() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newId, setNewId] = useState("");
+  const [defaultAgentId, setDefaultAgentId] = useState(null);
+  const [settingDefault, setSettingDefault] = useState(null);
 
   useEffect(() => {
-    fetchVoiceAgents()
-      .then(setAgents)
+    Promise.all([fetchVoiceAgents(), getDefaultVoiceAgent()])
+      .then(([agentList, defaultData]) => {
+        setAgents(agentList);
+        setDefaultAgentId(defaultData.agent?.agentId || null);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSetDefault = async (e, agentId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSettingDefault(agentId);
+    try {
+      await setDefaultVoiceAgent(agentId);
+      setDefaultAgentId(agentId);
+    } catch { /* ignore */ }
+    setSettingDefault(null);
+  };
 
   const handleCreate = () => {
     const id = newId.trim().replace(/\s+/g, "_").toLowerCase();
@@ -119,6 +136,19 @@ function AgentList() {
                     EL Synced
                   </span>
                 )}
+                {defaultAgentId === a.agentId ? (
+                  <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium">
+                    Default Caller
+                  </span>
+                ) : (
+                  <button
+                    onClick={(e) => handleSetDefault(e, a.agentId)}
+                    disabled={settingDefault === a.agentId}
+                    className="px-1.5 py-0.5 rounded border border-gray-700 text-gray-500 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {settingDefault === a.agentId ? 'Setting...' : 'Set as Default'}
+                  </button>
+                )}
               </div>
             </Link>
           ))}
@@ -169,6 +199,8 @@ function AgentEditor({ agentId }) {
   const [voiceStatus, setVoiceStatus] = useState("idle");
   const [voiceConnecting, setVoiceConnecting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
+  const [settingDefault, setSettingDefault] = useState(false);
 
   const {
     startSession,
@@ -203,24 +235,26 @@ function AgentEditor({ agentId }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchVoiceAgent(agentId).then((data) => {
-      if (cancelled) return;
-      setName(data.name ?? "");
-      setModel(data.model ?? "gpt-4o-mini");
-      setTemperature(data.temperature ?? 0.7);
-      setFirstMessage(data.firstMessage ?? "");
-      setObjective(data.objective ?? "");
-      setPrompt(data.prompt ?? "");
-      setElevenlabsVoiceId(data.elevenlabsVoiceId ?? "");
-      setCallEndPrompt(data.callEndPrompt ?? "");
-      setCallEndMessageType(data.callEndMessageType ?? "dynamic");
-      setCallEndMessage(data.callEndMessage ?? "");
-      setUninterruptibleReasons(data.uninterruptibleReasons ?? []);
-      if (data.elevenlabsAgentId) {
-        setElDashUrl(`https://elevenlabs.io/app/conversational-ai/${data.elevenlabsAgentId}`);
-      }
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    Promise.all([fetchVoiceAgent(agentId), getDefaultVoiceAgent()])
+      .then(([data, defaultData]) => {
+        if (cancelled) return;
+        setName(data.name ?? "");
+        setModel(data.model ?? "gpt-4o-mini");
+        setTemperature(data.temperature ?? 0.7);
+        setFirstMessage(data.firstMessage ?? "");
+        setObjective(data.objective ?? "");
+        setPrompt(data.prompt ?? "");
+        setElevenlabsVoiceId(data.elevenlabsVoiceId ?? "");
+        setCallEndPrompt(data.callEndPrompt ?? "");
+        setCallEndMessageType(data.callEndMessageType ?? "dynamic");
+        setCallEndMessage(data.callEndMessage ?? "");
+        setUninterruptibleReasons(data.uninterruptibleReasons ?? []);
+        if (data.elevenlabsAgentId) {
+          setElDashUrl(`https://elevenlabs.io/app/conversational-ai/${data.elevenlabsAgentId}`);
+        }
+        setIsDefault(defaultData.agent?.agentId === agentId);
+        setLoading(false);
+      }).catch(() => setLoading(false));
     return () => { cancelled = true; };
   }, [agentId]);
 
@@ -240,6 +274,15 @@ function AgentEditor({ agentId }) {
     uninterruptibleReasons: uninterruptibleReasons.length > 0 ? uninterruptibleReasons : undefined,
   }), [name, provider, model, temperature, firstMessage, objective, prompt,
     elevenlabsVoiceId, callEndPrompt, callEndMessageType, callEndMessage, uninterruptibleReasons]);
+
+  const handleSetDefault = async () => {
+    setSettingDefault(true);
+    try {
+      await setDefaultVoiceAgent(agentId);
+      setIsDefault(true);
+    } catch { /* ignore */ }
+    setSettingDefault(false);
+  };
 
   const handleSave = async () => {
     setSaveStatus("saving");
@@ -419,6 +462,16 @@ function AgentEditor({ agentId }) {
               <a href={elDashUrl} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Open in EL</a>
               <button onClick={handleUnlink} className="text-xs text-gray-500 hover:text-amber-400 transition-colors">Unlink</button>
             </>
+          )}
+          {isDefault ? (
+            <span className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium">
+              <Phone className="w-3.5 h-3.5" /> Default Caller
+            </span>
+          ) : (
+            <button onClick={handleSetDefault} disabled={settingDefault} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors disabled:opacity-50">
+              <Phone className="w-3.5 h-3.5" />
+              {settingDefault ? 'Setting...' : 'Set as Default Caller'}
+            </button>
           )}
         </div>
       </header>
