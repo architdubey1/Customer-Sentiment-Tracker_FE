@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchPriorityQueue, fetchUsers, updateFeedback, callCustomerWithDefault } from '../lib/api';
+import { fetchPriorityQueue, fetchUsers, updateFeedback, callCustomerWithDefault, endVoiceCall } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import PriorityBadge from '../components/PriorityBadge';
 import SentimentBadge from '../components/SentimentBadge';
@@ -85,7 +85,7 @@ export default function PriorityQueue() {
   const changeLevel = (val) => { setLevel(val); setPage(1); };
 
   const [error, setError] = useState('');
-  const [calling, setCalling] = useState({});
+  const [activeCall, setActiveCall] = useState(null); // { itemId, status: 'calling'|'ongoing', callSid }
 
   const handleAssign = async (feedbackId, userId) => {
     setUpdating((prev) => ({ ...prev, [feedbackId]: true }));
@@ -158,11 +158,11 @@ export default function PriorityQueue() {
 
   const handleCall = async (item) => {
     const phone = item.customer?.phone;
-    if (!phone) return;
-    setCalling((prev) => ({ ...prev, [item._id]: 'calling' }));
+    if (!phone || activeCall) return;
+    setActiveCall({ itemId: item._id, status: 'calling', callSid: null });
     setError('');
     try {
-      await callCustomerWithDefault({
+      const result = await callCustomerWithDefault({
         toNumber: phone,
         dynamicVariables: {
           customer_name: item.senderName || item.customer?.name || 'Customer',
@@ -172,13 +172,20 @@ export default function PriorityQueue() {
           issue_summary: (item.emailSubject || item.text?.slice(0, 200) || ''),
         },
       });
-      setCalling((prev) => ({ ...prev, [item._id]: 'success' }));
-      setTimeout(() => setCalling((prev) => ({ ...prev, [item._id]: null })), 3000);
+      setActiveCall({ itemId: item._id, status: 'ongoing', callSid: result.callSid || null });
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Call failed';
       setError(msg);
-      setCalling((prev) => ({ ...prev, [item._id]: null }));
+      setActiveCall(null);
     }
+  };
+
+  const handleEndCall = async (e) => {
+    e.stopPropagation();
+    if (activeCall?.callSid) {
+      try { await endVoiceCall(activeCall.callSid); } catch { /* ignore */ }
+    }
+    setActiveCall(null);
   };
 
   return (
@@ -396,20 +403,42 @@ export default function PriorityQueue() {
                       )}
                     </div>
 
-                    {item.customer?.phone && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleCall(item); }}
-                        disabled={calling[item._id] === 'calling'}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 disabled:opacity-50 transition-colors"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        {calling[item._id] === 'calling'
-                          ? 'Calling...'
-                          : calling[item._id] === 'success'
-                            ? 'Call Started!'
-                            : `Call via Voice Bot`}
-                      </button>
-                    )}
+                    {item.customer?.phone && (() => {
+                      const isThisCall = activeCall?.itemId === item._id;
+                      const callBusy = !!activeCall;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCall(item); }}
+                            disabled={callBusy}
+                            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-50 ${
+                              isThisCall && activeCall.status === 'ongoing'
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                : isThisCall && activeCall.status === 'calling'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                  : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30'
+                            }`}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            {isThisCall && activeCall.status === 'calling'
+                              ? 'Connecting...'
+                              : isThisCall && activeCall.status === 'ongoing'
+                                ? 'Call Ongoing'
+                                : callBusy
+                                  ? 'Call Busy'
+                                  : 'Call via Voice Bot'}
+                          </button>
+                          {isThisCall && activeCall.status === 'ongoing' && (
+                            <button
+                              onClick={handleEndCall}
+                              className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                            >
+                              <X className="w-3 h-3" /> End Call
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {item.resolutionNote && (
                       <div className="bg-emerald-500/5 border border-emerald-800/50 rounded-lg p-3">

@@ -483,13 +483,17 @@ function AgentEditor({ agentId }) {
   return (
     <div className="flex flex-col h-[calc(100vh-3rem)] -m-6">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-800 bg-gray-900 shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/voice-bot")} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold">{name || agentId}</h1>
-          <div className="flex gap-1.5 ml-2">
+      <header className="border-b border-gray-800 bg-gray-900 shrink-0">
+        {/* Row 1: Navigation */}
+        <div className="flex items-center justify-between px-6 pt-3 pb-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => navigate("/voice-bot")} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors shrink-0">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-semibold truncate">{name || agentId}</h1>
+            <span className="text-xs text-gray-500 font-mono bg-gray-800 px-2 py-1 rounded shrink-0 hidden sm:inline">{agentId}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             {["config", "test"].map((t) => (
               <button
                 key={t}
@@ -506,37 +510,39 @@ function AgentEditor({ agentId }) {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-500 font-mono bg-gray-800 px-2 py-1 rounded">{agentId}</span>
-          <button onClick={handleSave} disabled={saveStatus === "saving"} className={btnSecondary}>
+        {/* Row 2: Actions */}
+        <div className="flex items-center gap-2 px-6 pb-3 overflow-x-auto">
+          <button onClick={handleSave} disabled={saveStatus === "saving"} className={`${btnSecondary} shrink-0`}>
             <span className="flex items-center gap-1.5">
               <Save className="w-3.5 h-3.5" />
-              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save Draft"}
+              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save"}
             </span>
           </button>
-          <button onClick={handleSync} disabled={syncStatus === "syncing"} className={btnSecondary}>
+          <button onClick={handleSync} disabled={syncStatus === "syncing"} className={`${btnSecondary} shrink-0`}>
             <span className="flex items-center gap-1.5">
               <Volume2 className="w-3.5 h-3.5" />
-              {syncStatus === "syncing" ? "Syncing..." : syncStatus === "success" ? "Synced" : "Sync to ElevenLabs"}
+              {syncStatus === "syncing" ? "Syncing..." : syncStatus === "success" ? "Synced" : "Sync to EL"}
             </span>
           </button>
-          {syncError && <span className="text-xs text-red-400 max-w-[200px] truncate" title={syncError}>{syncError}</span>}
+          {syncError && <span className="text-xs text-red-400 max-w-[180px] truncate shrink-0" title={syncError}>{syncError}</span>}
           {elDashUrl && (
             <>
-              <a href={elDashUrl} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Open in EL</a>
-              <button onClick={handleUnlink} className="text-xs text-gray-500 hover:text-amber-400 transition-colors">Unlink</button>
+              <a href={elDashUrl} target="_blank" rel="noopener noreferrer" className={`${btnSecondary} shrink-0`}>Open in EL</a>
+              <button onClick={handleUnlink} className="text-xs text-gray-500 hover:text-amber-400 transition-colors shrink-0">Unlink</button>
             </>
           )}
-          {isDefault ? (
-            <span className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium">
-              <Phone className="w-3.5 h-3.5" /> Default Caller
-            </span>
-          ) : (
-            <button onClick={handleSetDefault} disabled={settingDefault} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors disabled:opacity-50">
-              <Phone className="w-3.5 h-3.5" />
-              {settingDefault ? 'Setting...' : 'Set as Default Caller'}
-            </button>
-          )}
+          <div className="ml-auto shrink-0">
+            {isDefault ? (
+              <span className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium">
+                <Phone className="w-3.5 h-3.5" /> Default Caller
+              </span>
+            ) : (
+              <button onClick={handleSetDefault} disabled={settingDefault} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-gray-700 text-gray-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors disabled:opacity-50">
+                <Phone className="w-3.5 h-3.5" />
+                {settingDefault ? 'Setting...' : 'Set as Default Caller'}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

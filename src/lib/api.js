@@ -42,5 +42,6 @@ export const startVoiceAgentPhoneCall = (id, body) => api.post(`/voice-agents/${
 export const setDefaultVoiceAgent = (id) => api.post(`/voice-agents/${id}/set-default`).then(r => r.data);
 export const getDefaultVoiceAgent = () => api.get('/voice-agents/default').then(r => r.data);
 export const callCustomerWithDefault = (body) => api.post('/voice-agents/call-customer', body).then(r => r.data);
+export const endVoiceCall = (callSid) => api.post('/voice-agents/end-call', { callSid }).then(r => r.data);
 
 export default api;
