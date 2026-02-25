@@ -30,4 +30,13 @@ export const analyzeSentiment = (text) => api.post('/sentiment/analyze', { text 
 export const fetchUsers = () => api.get('/users').then(r => r.data.data);
 export const updateFeedback = (id, body) => api.patch(`/sentiment/${id}`, body).then(r => r.data.data);
 
+export const fetchVoiceAgents = () => api.get('/voice-agents').then(r => r.data);
+export const fetchVoiceAgent = (id) => api.get(`/voice-agents/${id}`).then(r => r.data);
+export const updateVoiceAgent = (id, body) => api.post(`/voice-agents/${id}`, body).then(r => r.data);
+export const voiceAgentChat = (id, body) => api.post(`/voice-agents/${id}/chat`, body).then(r => r.data);
+export const syncVoiceAgent = (id) => api.post(`/voice-agents/${id}/sync-elevenlabs`).then(r => r.data);
+export const unlinkVoiceAgent = (id) => api.post(`/voice-agents/${id}/unlink-elevenlabs`).then(r => r.data);
+export const getVoiceAgentSignedUrl = (id) => api.get(`/voice-agents/${id}/elevenlabs-signed-url`).then(r => r.data);
+export const startVoiceAgentPhoneCall = (id, body) => api.post(`/voice-agents/${id}/start-phone-call`, body).then(r => r.data);
+
 export default api;

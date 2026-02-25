@@ -8,6 +8,7 @@ import PriorityQueue from './pages/PriorityQueue';
 import Feedback from './pages/Feedback';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
+import VoiceBot from './pages/VoiceBot';
 
 export default function App() {
   return (
@@ -21,6 +22,8 @@ export default function App() {
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/customers/:id" element={<CustomerDetail />} />
+          <Route path="/voice-bot" element={<VoiceBot />} />
+          <Route path="/voice-bot/:id" element={<VoiceBot />} />
         </Route>
       </Routes>
     </AuthProvider>
