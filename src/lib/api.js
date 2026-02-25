@@ -27,5 +27,7 @@ export const fetchCustomers = (params) => api.get('/customers', { params }).then
 export const fetchCustomerById = (id) => api.get(`/customers/${id}`).then(r => r.data.data);
 export const triggerMailScan = (limit) => api.post('/mail/scan', {}, { params: { limit } }).then(r => r.data);
 export const analyzeSentiment = (text) => api.post('/sentiment/analyze', { text }).then(r => r.data);
+export const fetchUsers = () => api.get('/users').then(r => r.data.data);
+export const updateFeedback = (id, body) => api.patch(`/sentiment/${id}`, body).then(r => r.data.data);
 
 export default api;

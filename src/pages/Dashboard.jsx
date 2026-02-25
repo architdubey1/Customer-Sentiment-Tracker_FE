@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchStats } from '../lib/api';
 import StatCard from '../components/StatCard';
-import { MessageSquare, AlertTriangle, TrendingDown, Users, Mail, BarChart3 } from 'lucide-react';
+import { MessageSquare, AlertTriangle, TrendingDown, Users, Mail, BarChart3, UserX, CheckCircle2, Clock } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const SENTIMENT_COLORS = { positive: '#10b981', negative: '#ef4444', neutral: '#6b7280', mixed: '#f59e0b' };
@@ -25,6 +25,9 @@ export default function Dashboard() {
   const highCount = stats.priorities?.high?.count || 0;
   const negativeCount = stats.sentiments?.negative?.count || 0;
   const emailCount = stats.sources?.email || 0;
+  const unassignedUrgent = stats.unassignedUrgent || 0;
+  const resolvedCount = stats.statuses?.resolved || 0;
+  const inProgressCount = stats.statuses?.in_progress || 0;
 
   return (
     <div className="space-y-6">
@@ -36,8 +39,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Feedback" value={stats.total} icon={MessageSquare} color="indigo" />
         <StatCard label="Critical Alerts" value={criticalCount + highCount} sub={`${criticalCount} critical, ${highCount} high`} icon={AlertTriangle} color="red" />
-        <StatCard label="Negative Feedback" value={negativeCount} sub={stats.sentiments?.negative ? `${stats.sentiments.negative.percentage}% of total` : ''} icon={TrendingDown} color="amber" />
+        <StatCard label="Unassigned Urgent" value={unassignedUrgent} sub="Critical & high, needs attention" icon={UserX} color="amber" />
         <StatCard label="Emails Processed" value={emailCount} icon={Mail} color="sky" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="In Progress" value={inProgressCount} icon={Clock} color="amber" />
+        <StatCard label="Resolved" value={resolvedCount} icon={CheckCircle2} color="emerald" />
+        <StatCard label="Negative Feedback" value={negativeCount} sub={stats.sentiments?.negative ? `${stats.sentiments.negative.percentage}% of total` : ''} icon={TrendingDown} color="red" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

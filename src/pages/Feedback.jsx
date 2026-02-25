@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { fetchFeedback } from '../lib/api';
 import PriorityBadge from '../components/PriorityBadge';
 import SentimentBadge from '../components/SentimentBadge';
-import { MessageSquare, Package, Truck, CreditCard, RefreshCw, XCircle, ShieldAlert, Ban, UserX, Box, HelpCircle, Tag, RotateCcw, Search, X } from 'lucide-react';
+import { MessageSquare, Package, Truck, CreditCard, RefreshCw, XCircle, ShieldAlert, Ban, UserX, Box, HelpCircle, Tag, RotateCcw, Search, X, Circle, Clock, CheckCircle2 } from 'lucide-react';
 
 const CATEGORY_CONFIG = [
   { key: 'missing_item', label: 'Missing Item', icon: Package },
@@ -21,6 +21,27 @@ const CATEGORY_CONFIG = [
 
 function formatCategory(cat) {
   return cat?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Other';
+}
+
+const STATUS_MAP = {
+  new: { label: 'New', icon: Circle, cls: 'text-gray-400 bg-gray-500/10' },
+  in_progress: { label: 'In Progress', icon: Clock, cls: 'text-amber-400 bg-amber-500/10' },
+  resolved: { label: 'Resolved', icon: CheckCircle2, cls: 'text-emerald-400 bg-emerald-500/10' },
+};
+
+function StatusBadge({ status, assignedTo }) {
+  const cfg = STATUS_MAP[status] || STATUS_MAP.new;
+  const Icon = cfg.icon;
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${cfg.cls}`}>
+        <Icon className="w-3 h-3" /> {cfg.label}
+      </span>
+      {assignedTo && (
+        <span className="text-[10px] text-indigo-400">{assignedTo.displayName || assignedTo.username}</span>
+      )}
+    </div>
+  );
 }
 
 export default function Feedback() {
@@ -158,6 +179,7 @@ export default function Feedback() {
                   <th className="text-left py-2 pr-4 font-medium">Sentiment</th>
                   <th className="text-left py-2 pr-4 font-medium">Priority</th>
                   <th className="text-left py-2 pr-4 font-medium">Issue</th>
+                  <th className="text-left py-2 pr-4 font-medium">Status</th>
                   <th className="text-left py-2 pr-4 font-medium">Source</th>
                   <th className="text-left py-2 font-medium">Date</th>
                 </tr>
@@ -187,6 +209,9 @@ export default function Feedback() {
                       {(!item.issueCategory || item.issueCategory === 'other') && (
                         <span className="text-gray-600 text-xs">—</span>
                       )}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <StatusBadge status={item.status} assignedTo={item.assignedTo} />
                     </td>
                     <td className="py-3 pr-4 text-gray-500 capitalize">{item.source || 'api'}</td>
                     <td className="py-3 text-gray-500 whitespace-nowrap">{new Date(item.createdAt).toLocaleDateString()}</td>
