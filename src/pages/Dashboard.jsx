@@ -122,10 +122,10 @@ export default function Dashboard() {
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-              <XAxis dataKey="_id" tick={{ fill: '#6b7280', fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-              <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
-              <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-gray-800)" />
+              <XAxis dataKey="_id" tick={{ fill: 'var(--color-gray-500)', fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+              <YAxis tick={{ fill: 'var(--color-gray-500)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--color-gray-900)', border: '1px solid var(--color-gray-800)', borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="positive" stroke="#10b981" fill="url(#colorPos)" strokeWidth={2} />
               <Area type="monotone" dataKey="negative" stroke="#ef4444" fill="url(#colorNeg)" strokeWidth={2} />
               <Area type="monotone" dataKey="critical" stroke="#f97316" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />

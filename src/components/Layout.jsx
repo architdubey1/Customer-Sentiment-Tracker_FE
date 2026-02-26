@@ -1,8 +1,9 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, AlertTriangle, MessageSquare, Users, Mail, Activity, LogOut, Mic, PhoneCall } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, MessageSquare, Users, Mail, Activity, LogOut, Mic, PhoneCall, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { triggerMailScan } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
 export default function Layout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
 
@@ -87,14 +89,24 @@ export default function Layout() {
           {user && (
             <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-800/50">
               <span className="text-sm text-gray-400 truncate">{user.username}</span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-amber-400 hover:bg-gray-700 transition-colors"
+                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
           {scanResult && (
