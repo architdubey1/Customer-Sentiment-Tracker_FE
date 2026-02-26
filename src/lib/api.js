@@ -44,4 +44,16 @@ export const getDefaultVoiceAgent = () => api.get('/voice-agents/default').then(
 export const callCustomerWithDefault = (body) => api.post('/voice-agents/call-customer', body).then(r => r.data);
 export const endVoiceCall = (callSid) => api.post('/voice-agents/end-call', { callSid }).then(r => r.data);
 
+// Chats (call log)
+export const fetchChats = (params) => api.get('/chats', { params }).then((r) => r.data);
+export const fetchChatById = (id) => api.get(`/chats/${id}`).then((r) => r.data);
+export const createChat = (body) => api.post('/chats', body).then((r) => r.data);
+export const setChatRecording = (id, sourceUrl) =>
+  api.post(`/chats/${id}/recording`, { sourceUrl }).then((r) => r.data);
+export const generateChatTranscript = (id) =>
+  api.post(`/chats/${id}/generate-transcript`).then((r) => r.data);
+export const generateChatSummary = (id) =>
+  api.post(`/chats/${id}/generate-summary`).then((r) => r.data);
+export const patchChat = (id, body) => api.patch(`/chats/${id}`, body).then((r) => r.data);
+
 export default api;

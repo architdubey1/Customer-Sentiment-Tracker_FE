@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, AlertTriangle, MessageSquare, Users, Mail, Activity, LogOut, Mic, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, MessageSquare, Users, Mail, Activity, LogOut, Mic, PhoneCall, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { triggerMailScan } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/feedback', label: 'Feedback', icon: MessageSquare },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/voice-bot', label: 'Voice Bot', icon: Mic },
+  { to: '/call-log', label: 'Call Logs', icon: PhoneCall },
 ];
 
 export default function Layout() {
