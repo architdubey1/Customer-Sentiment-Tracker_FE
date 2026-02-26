@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchPriorityQueue, fetchUsers, updateFeedback, callCustomerWithDefault, endVoiceCall, fetchCallStatus } from '../lib/api';
+import { fetchPriorityQueue, fetchUsers, updateFeedback, callCustomerWithDefault, endVoiceCall, fetchCallStatus, fetchChatById } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import PriorityBadge from '../components/PriorityBadge';
 import SentimentBadge from '../components/SentimentBadge';
@@ -121,7 +121,7 @@ export default function PriorityQueue() {
       const updated = await updateFeedback(feedbackId, { assignedTo: userId || null });
       setData((prev) => ({
         ...prev,
-        results: prev.results.map((r) => (r._id === feedbackId ? updated : r)),
+        results: prev.results.map((r) => (r._id === feedbackId ? { ...r, ...updated } : r)),
       }));
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Assign failed');
@@ -147,7 +147,7 @@ export default function PriorityQueue() {
       const updated = await updateFeedback(feedbackId, { status: newStatus });
       setData((prev) => ({
         ...prev,
-        results: prev.results.map((r) => (r._id === feedbackId ? updated : r)),
+        results: prev.results.map((r) => (r._id === feedbackId ? { ...r, ...updated } : r)),
       }));
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Status update failed');
@@ -167,7 +167,7 @@ export default function PriorityQueue() {
       });
       setData((prev) => ({
         ...prev,
-        results: prev.results.map((r) => (r._id === resolveModal ? updated : r)),
+        results: prev.results.map((r) => (r._id === resolveModal ? { ...r, ...updated } : r)),
       }));
       setResolveModal(null);
       setResolveNote('');
@@ -181,11 +181,12 @@ export default function PriorityQueue() {
   const handleCall = async (item) => {
     const phone = item.customer?.phone;
     if (!phone || activeCall) return;
-    setActiveCall({ itemId: item._id, status: 'calling', callSid: null });
+    setActiveCall({ itemId: item._id, status: 'calling', callSid: null, chatId: null });
     setError('');
     try {
       const result = await callCustomerWithDefault({
         toNumber: phone,
+        feedbackId: item._id,
         dynamicVariables: {
           customer_name: item.senderName || item.customer?.name || 'Customer',
           customer_email: item.senderEmail || '',
@@ -194,7 +195,7 @@ export default function PriorityQueue() {
           issue_summary: (item.emailSubject || item.text?.slice(0, 200) || ''),
         },
       });
-      setActiveCall({ itemId: item._id, status: 'ongoing', callSid: result.callSid || null });
+      setActiveCall({ itemId: item._id, status: 'ongoing', callSid: result.callSid || null, chatId: result.chatId || null });
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Call failed');
       setActiveCall(null);
@@ -221,7 +222,27 @@ export default function PriorityQueue() {
       try {
         const { status } = await fetchCallStatus(activeCall.callSid);
         if (TERMINAL_STATUSES.includes(status)) {
+          const finishedCall = { ...activeCall };
           setActiveCall(null);
+
+          // After call ends, check if ticket was resolved via the chat record
+          if (finishedCall.chatId && finishedCall.itemId) {
+            setTimeout(async () => {
+              try {
+                const chatData = await fetchChatById(finishedCall.chatId);
+                if (chatData?.ticketResolved === 'yes') {
+                  setData((prev) => prev ? {
+                    ...prev,
+                    results: prev.results.map((r) =>
+                      r._id === finishedCall.itemId
+                        ? { ...r, status: 'resolved', resolvedAt: new Date().toISOString() }
+                        : r
+                    ),
+                  } : prev);
+                }
+              } catch { /* chat may not have summary yet — that's ok */ }
+            }, 2000);
+          }
         }
       } catch {
         /* network blip — keep polling */
@@ -545,8 +566,8 @@ export default function PriorityQueue() {
                       </div>
                     )}
 
-                    {/* Phone + Call action */}
-                    {item.customer?.phone && (() => {
+                    {/* Phone + Call action — only show if assigned, and only the assignee (or admin) can call */}
+                    {item.customer?.phone && item.assignedTo && (isAdmin || item.assignedTo._id === user?.id) && (() => {
                       const isThisCall = activeCall?.itemId === item._id;
                       const callBusy = !!activeCall;
                       return (
